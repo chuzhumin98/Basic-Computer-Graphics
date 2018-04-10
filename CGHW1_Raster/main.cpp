@@ -8,6 +8,13 @@ using namespace cv;
 //实现Bresenham画线算法，四个参数分别为图像、起点、终点和颜色
 void IntegerBresenhamline(Mat image, Point p0, Point p1, Vec3b color); 
 
+//实现整数的中心画圆算法，参数分别为图像、圆心点、半径、颜色
+void IntegerMidPointCircle(Mat image, Point O, int radius, Vec3b color);
+
+//绘制对称的8个点，注意处理越界的情况
+void CirclePoints(Mat image, Point O, int dx, int dy, Vec3b color);
+
+
 int main() {
 	char line_window[] = "draw line";
 	Mat line_image = Mat::zeros(height, width, CV_8UC3 );
@@ -56,4 +63,47 @@ void IntegerBresenhamline(Mat image, Point p0, Point p1, Vec3b color) {
 			}
 		}
 	}
+}
+
+//绘制对称的8个点，注意处理越界的情况，在这里，规范化处理，dx,dy >= 0
+void CirclePoints(Mat image, Point O, int dx, int dy, Vec3b color) {
+	int X[] = {O.x + dx, O.x - dx, O.x + dy, O.x - dy};
+	int Y[] = {O.y + dy, O.y - dy, O.y + dx, O.y - dx};
+	if (X[0] < height) {
+		if (Y[0] < width) {
+			image.at<Vec3b>(X[0], Y[0]) = color;
+		}
+		if (Y[1] >= 0) {
+			image.at<Vec3b>(X[0], Y[1]) = color;
+		}
+	}
+	if (X[1] >= 0) {
+		if (Y[0] < width) {
+			image.at<Vec3b>(X[1], Y[0]) = color;
+		}
+		if (Y[1] >= 0) {
+			image.at<Vec3b>(X[1], Y[1]) = color;
+		}
+	}
+	if (X[2] < height) {
+		if (Y[2] < width) {
+			image.at<Vec3b>(X[2], Y[2]) = color;
+		}
+		if (Y[3] >= 0) {
+			image.at<Vec3b>(X[2], Y[3]) = color;
+		}
+	}
+	if (X[3] >= 0) {
+		if (Y[2] < width) {
+			image.at<Vec3b>(X[3], Y[2]) = color;
+		}
+		if (Y[3] >= 0) {
+			image.at<Vec3b>(X[3], Y[3]) = color;
+		}
+	}
+}
+
+//实现整数的中心画圆算法，参数分别为图像、圆心点、半径、颜色
+void IntegerMidPointCircle(Mat image, Point O, int radius, Vec3b color) {
+
 }
