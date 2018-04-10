@@ -1,6 +1,7 @@
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
+#include <iostream>
 using namespace cv;
 #define width 400
 #define height 400
@@ -16,8 +17,9 @@ void CirclePoints(Mat image, Point O, int dx, int dy, Vec3b color);
 
 
 int main() {
+	//画直线部分
 	char line_window[] = "draw line";
-	Mat line_image = Mat::zeros(height, width, CV_8UC3 );
+	Mat line_image = Mat::zeros(height, width, CV_8UC3);
 	Point p0 = Point(50,100);
 	Point p1 = Point(125,350);
 	Point p2 = Point(349, 51);
@@ -26,6 +28,15 @@ int main() {
 	IntegerBresenhamline(line_image, p2, p1, Vec3b(0,0,255));
 	imshow(line_window, line_image);
 	imwrite("line.bmp", line_image);
+	//画圆弧部分
+	char circle_window[] = "draw circle";
+	Mat circle_image = Mat::zeros(height, width, CV_8UC3);
+	IntegerMidPointCircle(circle_image, Point(280, 300), 80,
+		Vec3b(255,255,0)); //画一个全在图像内部的圆
+	IntegerMidPointCircle(circle_image, p0, 90, 
+		Vec3b(0,255,255)); //画一个部分在图像中的圆
+	imshow(circle_window, circle_image);
+	imwrite("circle.bmp", circle_image);
 	waitKey(0);
 	return 0;
 }
@@ -105,5 +116,17 @@ void CirclePoints(Mat image, Point O, int dx, int dy, Vec3b color) {
 
 //实现整数的中心画圆算法，参数分别为图像、圆心点、半径、颜色
 void IntegerMidPointCircle(Mat image, Point O, int radius, Vec3b color) {
-
+	int x = 0, y = radius;
+	int d = 5 - 4 * radius; //初始值d0
+	CirclePoints(image, O, x, y, color);
+	while (x <= y) {
+		if (d < 0) { //根据y是否需要发生变化来分类
+			d += 8 * x + 12;
+		} else {
+			d += 8 * (x - y) + 20;
+			y--;
+		}
+		x++;
+		CirclePoints(image, O, x, y, color);
+	}
 }
