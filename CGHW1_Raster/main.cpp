@@ -22,6 +22,8 @@ void IntegerBresenhamlineWithKernel(Mat image, Point p0, Point p1, Vec3b color);
 //实现区域采样反走样的Bresenham画线算法，四个参数分别为图像、起点、终点和颜色
 void IntegerBresenhamlineWithArea(Mat image, Point p0, Point p1, Vec3b color); 
 
+//实现区域带Kernel的采样反走样的Bresenham画线算法
+void IntegerBresenhamlineWithKernelArea(Mat image, Point p0, Point p1, Vec3b color);
 
 int main() {
 	//画直线部分
@@ -30,11 +32,11 @@ int main() {
 	Point p0 = Point(50,100);
 	Point p1 = Point(125,350);
 	Point p2 = Point(349, 51);
-	IntegerBresenhamlineWithArea(line_image, p1, p0, Vec3b(255,0,0));
-	IntegerBresenhamlineWithArea(line_image, p0, p2, Vec3b(0,255,0));
-	IntegerBresenhamlineWithArea(line_image, p2, p1, Vec3b(0,0,255));
+	IntegerBresenhamlineWithKernelArea(line_image, p1, p0, Vec3b(255,0,0));
+	IntegerBresenhamlineWithKernelArea(line_image, p0, p2, Vec3b(0,255,0));
+	IntegerBresenhamlineWithKernelArea(line_image, p2, p1, Vec3b(0,0,255));
 	imshow(line_window, line_image);
-	imwrite("line_area.bmp", line_image);
+	imwrite("line_kernelarea.bmp", line_image);
 	//画圆弧部分
 	/*char circle_window[] = "draw circle";
 	Mat circle_image = Mat::zeros(height, width, CV_8UC3);
@@ -204,6 +206,72 @@ void IntegerBresenhamlineWithArea(Mat image, Point p0, Point p1, Vec3b color) {
 					}
 				}
 				double ita = 1.0 * countUsed / k / k; //所占权重
+				Vec3b myColor = Vec3b((int)(ita*color[0]),(int)(ita*color[1]),(int)(ita*color[2]));
+				image.at<Vec3b>(x+j*stepX, y) = myColor; //绘制像素点
+			} 		
+			y += stepY;
+			e += 2 * absDx;
+			if (e >= 0) {
+				x += stepX;
+				e -= 2 * absDy;
+			}
+		}
+	}
+}
+
+//实现区域带Kernel的采样反走样的Bresenham画线算法
+void IntegerBresenhamlineWithKernelArea(Mat image, Point p0, Point p1, Vec3b color) {
+	const int k = 3; //分块的区域个数（单轴）
+	double w[k][k] = {{0.0625,0.125,0.0625},{0.125,0.25,0.125},{0.0625,0.125,0.0625}};
+	int x = p0.x, y = p0.y; //起始值
+	int dx = p1.x - x, dy = p1.y - y; //差值，或称之为斜率的整数拆分
+	double margin = sqrt(dx*dx + dy*dy);
+	int stepX = (dx >= 0 ? 1 : -1); //每一步x向哪边移动
+	int stepY = (dy >= 0 ? 1 : -1); //每一步y向哪边移动
+	if (dx * stepX >= dy * stepY) { //沿x轴进行绘制
+		int absDx = stepX * dx;
+		int absDy = stepY * dy;
+		int e = -absDx; //残差项，初始化为dx的一半，从而保证四舍五入		
+		for (int i = 0; i <= absDx; i++) {
+			for (int j = -1; j <= 1; j++) { //这里我们考虑这上下三个像素方格
+				double eJ = e - 2 * absDx * j; //设置当前的e
+				double usedWeight = 0.0; //对该方格有用的权重
+				for (int l = 0; l < k; l++) {
+					for (int m = 0; m < k; m++) {
+						double eBlock = eJ + 2.0 * l * absDy / k - 2.0 * m * absDx / k;
+						if (-absDx - margin <= eBlock && eBlock <= -absDx + margin) {
+							usedWeight += w[l][m]; //中心点在区域内则加一
+						}
+					}
+				}
+				double ita = usedWeight; //所占权重
+				Vec3b myColor = Vec3b((int)(ita*color[0]),(int)(ita*color[1]),(int)(ita*color[2]));
+				image.at<Vec3b>(x, y+j*stepY) = myColor; //绘制像素点
+			} 		
+			x += stepX;
+			e += 2 * absDy;
+			if (e >= 0) {
+				y += stepY;
+				e -= 2 * absDx; //改变时也带动残差发生变化
+			}
+		}
+	} else { //沿y轴进行绘制
+		int absDx = stepX * dx;
+		int absDy = stepY * dy;
+		int e = -absDy;
+		for (int i = 0; i <= absDy; i++) {
+			for (int j = -1; j <= 1; j++) { //这里我们考虑这上下三个像素方格
+				double eJ = e - 2 * absDy * j; //设置当前的e
+				double usedWeight = 0.0; //对该方格有用的权重
+				for (int l = 0; l < k; l++) {
+					for (int m = 0; m < k; m++) {
+						double eBlock = eJ + 2.0 * l * absDx / k - 2.0 * m * absDy / k;
+						if (-absDy - margin <= eBlock && eBlock <= -absDy + margin) {
+							usedWeight += w[m][l];
+						}
+					}
+				}
+				double ita = usedWeight; //所占权重
 				Vec3b myColor = Vec3b((int)(ita*color[0]),(int)(ita*color[1]),(int)(ita*color[2]));
 				image.at<Vec3b>(x+j*stepX, y) = myColor; //绘制像素点
 			} 		
