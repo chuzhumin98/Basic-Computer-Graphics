@@ -25,6 +25,9 @@ void IntegerBresenhamlineWithArea(Mat image, Point p0, Point p1, Vec3b color);
 //实现区域带Kernel的采样反走样的Bresenham画线算法
 void IntegerBresenhamlineWithKernelArea(Mat image, Point p0, Point p1, Vec3b color);
 
+//追加SSAA
+void SSAAIntegerBresenhamlineWithKernelArea(Mat image, Point p0, Point p1, Vec3b color);
+
 int main() {
 	//画直线部分
 	char line_window[] = "draw line";
@@ -37,6 +40,21 @@ int main() {
 	IntegerBresenhamlineWithKernelArea(line_image, p2, p1, Vec3b(0,0,255));
 	imshow(line_window, line_image);
 	imwrite("line_kernelarea.bmp", line_image);
+
+	//SSAA画直线部分
+	char line_2_window[] = "draw SSAA line";
+	Mat line_2_image = Mat::zeros(2*height, 2*width, CV_8UC3);
+	Mat lines_image;
+	Point p0s = Point(50,100);
+	Point p1s = Point(125,350);
+	Point p2s = Point(349, 51);
+	SSAAIntegerBresenhamlineWithKernelArea(line_2_image, p1s, p0s, Vec3b(255,0,0));
+	SSAAIntegerBresenhamlineWithKernelArea(line_2_image, p0s, p2s, Vec3b(0,255,0));
+	SSAAIntegerBresenhamlineWithKernelArea(line_2_image, p2s, p1s, Vec3b(0,0,255));
+	resize(line_2_image, lines_image, Size(height, width));
+	imshow(line_2_window, lines_image);
+	imwrite("line_SSAAkernelarea.bmp", lines_image);
+
 	//画圆弧部分
 	/*char circle_window[] = "draw circle";
 	Mat circle_image = Mat::zeros(height, width, CV_8UC3);
@@ -48,6 +66,13 @@ int main() {
 	imwrite("circle.bmp", circle_image); */
 	waitKey(0);
 	return 0;
+}
+
+//追加SSAA
+void SSAAIntegerBresenhamlineWithKernelArea(Mat image, Point p0, Point p1, Vec3b color) {
+	Point p0s = Point(p0.x*2, p0.y*2);
+	Point p1s = Point(p1.x*2, p1.y*2);
+	IntegerBresenhamlineWithKernelArea(image, p0s, p1s, color);
 }
 
 //实现Bresenham画线算法，四个参数分别为图像、起点、终点和颜色
