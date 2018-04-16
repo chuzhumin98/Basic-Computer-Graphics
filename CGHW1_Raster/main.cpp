@@ -7,6 +7,9 @@ using namespace cv;
 #define width 400
 #define height 400
 
+//在某个像素点追加上其他的颜色,并将结果写入aim中
+void addWithColor(Vec3b& aim, Vec3b& color);
+
 //实现Bresenham画线算法，四个参数分别为图像、起点、终点和颜色
 void IntegerBresenhamline(Mat image, Point p0, Point p1, Vec3b color); 
 
@@ -27,6 +30,7 @@ void IntegerBresenhamlineWithKernelArea(Mat image, Point p0, Point p1, Vec3b col
 
 //追加SSAA
 void SSAAIntegerBresenhamlineWithKernelArea(Mat image, Point p0, Point p1, Vec3b color);
+
 
 int main() {
 	//画直线部分
@@ -55,17 +59,34 @@ int main() {
 	imshow(line_2_window, lines_image);
 	imwrite("line_SSAAkernelarea.bmp", lines_image);
 
+	//相交线反走样部分
+	char line_3_window[] = "draw intersection line";
+	Mat line_3_image = Mat::zeros(height, width, CV_8UC3);
+	IntegerBresenhamlineWithKernelArea(line_3_image, Point(50, 48), Point(260, 309), Vec3b(220,40,40));
+	IntegerBresenhamlineWithKernelArea(line_3_image, Point(270, 35), Point(40, 366), Vec3b(35,200,20));
+	IntegerBresenhamlineWithKernelArea(line_3_image, Point(100, 50), Point(150, 300), Vec3b(50,10,180));
+	imshow(line_3_window, line_3_image);
+	imwrite("line_intersection.bmp", line_3_image);
+
+
 	//画圆弧部分
-	/*char circle_window[] = "draw circle";
+	char circle_window[] = "draw circle";
 	Mat circle_image = Mat::zeros(height, width, CV_8UC3);
 	IntegerMidPointCircle(circle_image, Point(280, 300), 80,
 		Vec3b(255,255,0)); //画一个全在图像内部的圆
 	IntegerMidPointCircle(circle_image, p0, 90, 
 		Vec3b(0,255,255)); //画一个部分在图像中的圆
 	imshow(circle_window, circle_image);
-	imwrite("circle.bmp", circle_image); */
+	imwrite("circle.bmp", circle_image); 
 	waitKey(0);
 	return 0;
+}
+
+//在某个像素点追加上其他的颜色,并将结果写入aim中
+void addWithColor(Vec3b& aim, Vec3b& color) {
+	for (int i = 0; i < 3; i++) {
+		aim[i] = min(aim[i]+color[i], 255);
+	}
 }
 
 //追加SSAA
@@ -86,7 +107,7 @@ void IntegerBresenhamline(Mat image, Point p0, Point p1, Vec3b color) {
 		int absDy = stepY * dy;
 		int e = -absDx; //残差项，初始化为dx的一半，从而保证四舍五入		
 		for (int i = 0; i <= absDx; i++) {
-			image.at<Vec3b>(x, y) = color; //绘制像素点
+			addWithColor(image.at<Vec3b>(x, y), color); //绘制像素点
 			x += stepX;
 			e += 2 * absDy;
 			if (e >= 0) {
@@ -99,7 +120,7 @@ void IntegerBresenhamline(Mat image, Point p0, Point p1, Vec3b color) {
 		int absDy = stepY * dy;
 		int e = -absDy;
 		for (int i = 0; i <= absDy; i++) {
-			image.at<Vec3b>(x, y) = color;
+			addWithColor(image.at<Vec3b>(x, y), color); //绘制像素点
 			y += stepY;
 			e += 2 * absDx;
 			if (e >= 0) {
@@ -140,7 +161,7 @@ void IntegerBresenhamlineWithKernel(Mat image, Point p0, Point p1, Vec3b color) 
 			}
 			double ita = 1.0 * mywMax / wMax;
 			Vec3b myColor = Vec3b((int)(ita*color[0]),(int)(ita*color[1]),(int)(ita*color[2]));
-			image.at<Vec3b>(x, y) = myColor; //绘制像素点
+			addWithColor(image.at<Vec3b>(x, y), myColor); //绘制像素点
 			x += stepX;
 			e += 2 * absDy;
 			if (e >= 0) {
@@ -168,7 +189,7 @@ void IntegerBresenhamlineWithKernel(Mat image, Point p0, Point p1, Vec3b color) 
 			}
 			double ita = 1.0 * mywMax / wMax;
 			Vec3b myColor = Vec3b((int)(ita*color[0]),(int)(ita*color[1]),(int)(ita*color[2]));
-			image.at<Vec3b>(x, y) = myColor;
+			addWithColor(image.at<Vec3b>(x, y), myColor); //绘制像素点
 			y += stepY;
 			e += 2 * absDx;
 			if (e >= 0) {
@@ -205,7 +226,7 @@ void IntegerBresenhamlineWithArea(Mat image, Point p0, Point p1, Vec3b color) {
 				}
 				double ita = 1.0 * countUsed / k / k; //所占权重
 				Vec3b myColor = Vec3b((int)(ita*color[0]),(int)(ita*color[1]),(int)(ita*color[2]));
-				image.at<Vec3b>(x, y+j*stepY) = myColor; //绘制像素点
+				addWithColor(image.at<Vec3b>(x, y+j*stepY), myColor); //绘制像素点
 			} 		
 			x += stepX;
 			e += 2 * absDy;
@@ -232,7 +253,7 @@ void IntegerBresenhamlineWithArea(Mat image, Point p0, Point p1, Vec3b color) {
 				}
 				double ita = 1.0 * countUsed / k / k; //所占权重
 				Vec3b myColor = Vec3b((int)(ita*color[0]),(int)(ita*color[1]),(int)(ita*color[2]));
-				image.at<Vec3b>(x+j*stepX, y) = myColor; //绘制像素点
+				addWithColor(image.at<Vec3b>(x+j*stepX, y), myColor); //绘制像素点
 			} 		
 			y += stepY;
 			e += 2 * absDx;
@@ -271,7 +292,7 @@ void IntegerBresenhamlineWithKernelArea(Mat image, Point p0, Point p1, Vec3b col
 				}
 				double ita = usedWeight; //所占权重
 				Vec3b myColor = Vec3b((int)(ita*color[0]),(int)(ita*color[1]),(int)(ita*color[2]));
-				image.at<Vec3b>(x, y+j*stepY) = myColor; //绘制像素点
+				addWithColor(image.at<Vec3b>(x, y+j*stepY), myColor); //绘制像素点
 			} 		
 			x += stepX;
 			e += 2 * absDy;
@@ -298,7 +319,7 @@ void IntegerBresenhamlineWithKernelArea(Mat image, Point p0, Point p1, Vec3b col
 				}
 				double ita = usedWeight; //所占权重
 				Vec3b myColor = Vec3b((int)(ita*color[0]),(int)(ita*color[1]),(int)(ita*color[2]));
-				image.at<Vec3b>(x+j*stepX, y) = myColor; //绘制像素点
+				addWithColor(image.at<Vec3b>(x+j*stepX, y), myColor); //绘制像素点
 			} 		
 			y += stepY;
 			e += 2 * absDx;
