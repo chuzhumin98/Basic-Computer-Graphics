@@ -3,6 +3,7 @@
 #include <opencv2/imgproc.hpp>
 #include <iostream>
 #include <cmath>
+#include <stack>
 using namespace cv;
 #define width 400
 #define height 400
@@ -31,8 +32,11 @@ void IntegerBresenhamlineWithKernelArea(Mat image, Point p0, Point p1, Vec3b col
 //追加SSAA
 void SSAAIntegerBresenhamlineWithKernelArea(Mat image, Point p0, Point p1, Vec3b color);
 
+//内点表示的区域填充算法，其中p0表示初始点,image为需要处理的图像
+void ScanLineFill4(Mat image, Point p0, Vec3b oldcolor, Vec3b newcolor);
 
 int main() {
+	/*
 	//画直线部分
 	char line_window[] = "draw line";
 	Mat line_image = Mat::zeros(height, width, CV_8UC3);
@@ -78,6 +82,25 @@ int main() {
 		Vec3b(0,255,255)); //画一个部分在图像中的圆
 	imshow(circle_window, circle_image);
 	imwrite("circle.bmp", circle_image); 
+	*/
+
+	//区域填充部分
+	char area_window[] = "area fill";
+	Mat area_image = Mat::zeros(height, width, CV_8UC3);
+	IntegerBresenhamlineWithKernelArea(area_image, Point(160,50), Point(160,160), Vec3b(200,200,200));
+	IntegerBresenhamlineWithKernelArea(area_image, Point(160,160), Point(40,200), Vec3b(200,200,200));
+	IntegerBresenhamlineWithKernelArea(area_image, Point(40,200), Point(160,240), Vec3b(200,200,200));
+	IntegerBresenhamlineWithKernelArea(area_image, Point(160,240), Point(160,350), Vec3b(200,200,200));
+	IntegerBresenhamlineWithKernelArea(area_image, Point(160,350), Point(240,270), Vec3b(200,200,200));
+	IntegerBresenhamlineWithKernelArea(area_image, Point(240,270), Point(340,300), Vec3b(200,200,200));
+	IntegerBresenhamlineWithKernelArea(area_image, Point(340,300), Point(300,200), Vec3b(200,200,200));
+	IntegerBresenhamlineWithKernelArea(area_image, Point(300,200), Point(340,100), Vec3b(200,200,200));
+	IntegerBresenhamlineWithKernelArea(area_image, Point(340,100), Point(240,130), Vec3b(200,200,200));
+	IntegerBresenhamlineWithKernelArea(area_image, Point(240,130), Point(160,50), Vec3b(200,200,200));
+	ScanLineFill4(area_image, Point(200, 200), Vec3b(0, 0, 0), Vec3b(240,160, 80));
+	imshow(area_window, area_image);
+	imwrite("area_fill.bmp", area_image);
+
 	waitKey(0);
 	return 0;
 }
@@ -337,34 +360,34 @@ void CirclePoints(Mat image, Point O, int dx, int dy, Vec3b color) {
 	int Y[] = {O.y + dy, O.y - dy, O.y + dx, O.y - dx};
 	if (X[0] < height) {
 		if (Y[0] < width) {
-			image.at<Vec3b>(X[0], Y[0]) = color;
+			addWithColor(image.at<Vec3b>(X[0], Y[0]), color);
 		}
 		if (Y[1] >= 0) {
-			image.at<Vec3b>(X[0], Y[1]) = color;
+			addWithColor(image.at<Vec3b>(X[0], Y[1]), color);
 		}
 	}
 	if (X[1] >= 0) {
 		if (Y[0] < width) {
-			image.at<Vec3b>(X[1], Y[0]) = color;
+			addWithColor(image.at<Vec3b>(X[1], Y[0]), color);
 		}
 		if (Y[1] >= 0) {
-			image.at<Vec3b>(X[1], Y[1]) = color;
+			addWithColor(image.at<Vec3b>(X[1], Y[1]), color);
 		}
 	}
 	if (X[2] < height) {
 		if (Y[2] < width) {
-			image.at<Vec3b>(X[2], Y[2]) = color;
+			addWithColor(image.at<Vec3b>(X[2], Y[2]), color);
 		}
 		if (Y[3] >= 0) {
-			image.at<Vec3b>(X[2], Y[3]) = color;
+			addWithColor(image.at<Vec3b>(X[2], Y[3]), color);
 		}
 	}
 	if (X[3] >= 0) {
 		if (Y[2] < width) {
-			image.at<Vec3b>(X[3], Y[2]) = color;
+			addWithColor(image.at<Vec3b>(X[3], Y[2]), color);
 		}
 		if (Y[3] >= 0) {
-			image.at<Vec3b>(X[3], Y[3]) = color;
+			addWithColor(image.at<Vec3b>(X[3], Y[3]), color);
 		}
 	}
 }
@@ -383,5 +406,18 @@ void IntegerMidPointCircle(Mat image, Point O, int radius, Vec3b color) {
 		}
 		x++;
 		CirclePoints(image, O, x, y, color);
+	}
+}
+
+//内点表示的区域填充算法，其中p0表示初始点,image为需要处理的图像
+void ScanLineFill4(Mat image, Point p0, Vec3b oldcolor, Vec3b newcolor) {
+	int xleft = 0, xright = 0; //左右边界点
+	bool spanNeedFill = false; //扩展的部分是否需要绘制
+	std::stack<Point> seeds; //种子栈
+	seeds.push(p0); //将初始点压入栈中
+	while(!seeds.empty()) { //栈非空时继续循环
+		Point pt = seeds.top(); //取出栈顶元素
+		seeds.pop();
+
 	}
 }
