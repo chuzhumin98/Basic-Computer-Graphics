@@ -36,7 +36,6 @@ void SSAAIntegerBresenhamlineWithKernelArea(Mat image, Point p0, Point p1, Vec3b
 void ScanLineFill4(Mat image, Point p0, Vec3b oldcolor, Vec3b newcolor);
 
 int main() {
-	/*
 	//画直线部分
 	char line_window[] = "draw line";
 	Mat line_image = Mat::zeros(height, width, CV_8UC3);
@@ -82,21 +81,20 @@ int main() {
 		Vec3b(0,255,255)); //画一个部分在图像中的圆
 	imshow(circle_window, circle_image);
 	imwrite("circle.bmp", circle_image); 
-	*/
 
 	//区域填充部分
 	char area_window[] = "area fill";
 	Mat area_image = Mat::zeros(height, width, CV_8UC3);
-	IntegerBresenhamlineWithKernelArea(area_image, Point(160,50), Point(160,160), Vec3b(200,200,200));
-	IntegerBresenhamlineWithKernelArea(area_image, Point(160,160), Point(40,200), Vec3b(200,200,200));
-	IntegerBresenhamlineWithKernelArea(area_image, Point(40,200), Point(160,240), Vec3b(200,200,200));
-	IntegerBresenhamlineWithKernelArea(area_image, Point(160,240), Point(160,350), Vec3b(200,200,200));
-	IntegerBresenhamlineWithKernelArea(area_image, Point(160,350), Point(240,270), Vec3b(200,200,200));
-	IntegerBresenhamlineWithKernelArea(area_image, Point(240,270), Point(340,300), Vec3b(200,200,200));
-	IntegerBresenhamlineWithKernelArea(area_image, Point(340,300), Point(300,200), Vec3b(200,200,200));
-	IntegerBresenhamlineWithKernelArea(area_image, Point(300,200), Point(340,100), Vec3b(200,200,200));
-	IntegerBresenhamlineWithKernelArea(area_image, Point(340,100), Point(240,130), Vec3b(200,200,200));
-	IntegerBresenhamlineWithKernelArea(area_image, Point(240,130), Point(160,50), Vec3b(200,200,200));
+	IntegerBresenhamline(area_image, Point(160,50), Point(160,160), Vec3b(200,200,200));
+	IntegerBresenhamline(area_image, Point(160,160), Point(40,200), Vec3b(200,200,200));
+	IntegerBresenhamline(area_image, Point(40,200), Point(160,240), Vec3b(200,200,200));
+	IntegerBresenhamline(area_image, Point(160,240), Point(160,350), Vec3b(200,200,200));
+	IntegerBresenhamline(area_image, Point(160,350), Point(240,270), Vec3b(200,200,200));
+	IntegerBresenhamline(area_image, Point(240,270), Point(340,300), Vec3b(200,200,200));
+	IntegerBresenhamline(area_image, Point(340,300), Point(300,200), Vec3b(200,200,200));
+	IntegerBresenhamline(area_image, Point(300,200), Point(340,100), Vec3b(200,200,200));
+	IntegerBresenhamline(area_image, Point(340,100), Point(240,130), Vec3b(200,200,200));
+	IntegerBresenhamline(area_image, Point(240,130), Point(160,50), Vec3b(200,200,200));
 	ScanLineFill4(area_image, Point(200, 200), Vec3b(0, 0, 0), Vec3b(240,160, 80));
 	imshow(area_window, area_image);
 	imwrite("area_fill.bmp", area_image);
@@ -412,12 +410,57 @@ void IntegerMidPointCircle(Mat image, Point O, int radius, Vec3b color) {
 //内点表示的区域填充算法，其中p0表示初始点,image为需要处理的图像
 void ScanLineFill4(Mat image, Point p0, Vec3b oldcolor, Vec3b newcolor) {
 	int xleft = 0, xright = 0; //左右边界点
+	int x = 0, y = 0; //所需的临时变量
 	bool spanNeedFill = false; //扩展的部分是否需要绘制
 	std::stack<Point> seeds; //种子栈
 	seeds.push(p0); //将初始点压入栈中
 	while(!seeds.empty()) { //栈非空时继续循环
 		Point pt = seeds.top(); //取出栈顶元素
 		seeds.pop();
+		x = pt.x;
+		y = pt.y;
+		while (image.at<Vec3b>(x, y) == oldcolor) { //不断向右填充
+			addWithColor(image.at<Vec3b>(x, y), newcolor);
+			x++;
+		}
+		xright = x - 1; //右边界为最后一个着色点
+		x = pt.x - 1;
+		while (image.at<Vec3b>(x, y) == oldcolor) { //不断向左填充
+			addWithColor(image.at<Vec3b>(x, y), newcolor);
+			x--;
+		}
+		xleft = x + 1;
 
+		//处理上面一条扫描线，从左向右扫描，每段各找出一个代表点
+		x = xleft;
+		y = y + 1;
+		while (x <= xright) {
+			spanNeedFill = false; //初始化不需要填充
+			while (image.at<Vec3b>(x,y) == oldcolor) { //找到最靠右的一个代表元
+				spanNeedFill = true;
+				x++;
+			}
+			if (spanNeedFill) {
+				Point newPoint(x-1, y);
+				seeds.push(newPoint);
+			}
+			while (image.at<Vec3b>(x, y) != oldcolor && x <= xright) x++; //跳过中间边界的点
+		}
+
+		//同理处理下面一条扫描线
+		x = xleft;
+		y -= 2;
+		while (x <= xright) {
+			spanNeedFill = false; //初始化不需要填充
+			while (image.at<Vec3b>(x,y) == oldcolor) { //找到最靠右的一个代表元
+				spanNeedFill = true;
+				x++;
+			}
+			if (spanNeedFill) {
+				Point newPoint(x-1, y);
+				seeds.push(newPoint);
+			}
+			while (image.at<Vec3b>(x, y) != oldcolor && x <= xright) x++; //跳过中间边界的点
+		}
 	}
 }
